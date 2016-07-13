@@ -38,6 +38,7 @@ find_package(KF5 ${KF5_MIN_VERSION} REQUIRED COMPONENTS
     #KDELibs4Support
     XmlGui
     KIO
+    Parts
 )
 
 feature_summary(WHAT ALL INCLUDE_QUIET_PACKAGES FATAL_ON_MISSING_REQUIRED_PACKAGES)
@@ -56,6 +57,7 @@ target_link_libraries(main_EXE
     KF5::KIOCore
     KF5::KIOWidgets
     KF5::KIOFileWidgets
+    KF5::Parts
 )
 
 install(TARGETS main_EXE ${INSTALL_TARGETS_DEFAULT_ARGS})

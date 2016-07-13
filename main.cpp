@@ -18,7 +18,8 @@
 #include <QWheelEvent>
 
 #include <KAboutData>
-#include <KMessageBox>
+#include <KCoreAddons/KPluginLoader>
+#include <KCoreAddons/KPluginFactory>
 #include <KIOFileWidgets/KDirSortFilterProxyModel>
 #include <KIOFileWidgets/KFilePlacesModel>
 #include <KIOFileWidgets/KImageFilePreview>
@@ -27,6 +28,7 @@
 #include <KIOWidgets/KDirLister>
 #include <KIOWidgets/KDirModel>
 #include <KIOWidgets/KFile>
+#include <KParts/KParts/ReadOnlyPart>
 #include <KWidgetsAddons/KSeparator>
 #include <KXmlGui/KToolBar>
 #include <KXmlGui/KXmlGuiWindow>
@@ -88,7 +90,8 @@ class MainWindow : public KXmlGuiWindow {
       treeView = new ZoomTreeView(this);
       treeView->setModel(proxyModel);
       treeView->setAnimated(true);
-      // treeView->header()->setClickable(true);
+      // new way?
+      //treeView->header()->setClickable(true);
       treeView->setMouseTracking(true);
       // selection
       QItemSelectionModel *itemSelectionModel = new QItemSelectionModel(proxyModel);
@@ -101,24 +104,31 @@ class MainWindow : public KXmlGuiWindow {
       // file preview
       filePreview = new KImageFilePreview(this);
 
-      // layout
-      QSplitter *splitter = new QSplitter(Qt::Horizontal, this);
+      // okteta part
+      KPluginLoader loader("oktetapart");
+      KPluginFactory *factory = loader.factory();
+      part = factory->create<KParts::ReadOnlyPart>(this, this);
 
-      QWidget *browserWidget = new QWidget(this);
-      QVBoxLayout *browserLayout = new QVBoxLayout(this);
-      browserLayout->addWidget(urlNavigator);
-      browserLayout->addWidget(treeView);
-      browserWidget->setLayout(browserLayout);
-      splitter->addWidget(browserWidget);
+      { // layout
+        QSplitter *splitter = new QSplitter(Qt::Horizontal, this);
 
-      QFrame *sideFrame = new QFrame(this);
-      sideFrame->setFrameStyle(QFrame::StyledPanel | QFrame::Sunken);
-      sideFrame->setWindowTitle("Information");
-      QVBoxLayout *frameLayout = new QVBoxLayout(sideFrame);
-      frameLayout->addWidget(filePreview);
-      splitter->addWidget(sideFrame);
+        QWidget *browserWidget = new QWidget(this);
+        QVBoxLayout *browserLayout = new QVBoxLayout(this);
+        browserLayout->addWidget(urlNavigator);
+        browserLayout->addWidget(treeView);
+        browserWidget->setLayout(browserLayout);
+        splitter->addWidget(browserWidget);
 
-      setCentralWidget(splitter);
+        QFrame *sideFrame = new QFrame(this);
+        sideFrame->setFrameStyle(QFrame::StyledPanel | QFrame::Sunken);
+        sideFrame->setWindowTitle("Information");
+        QVBoxLayout *frameLayout = new QVBoxLayout(sideFrame);
+        frameLayout->addWidget(filePreview);
+        frameLayout->addWidget(part->widget());
+        splitter->addWidget(sideFrame);
+
+        setCentralWidget(splitter);
+      }
 
       // set window dimensions
       int height = 800;
@@ -183,6 +193,7 @@ class MainWindow : public KXmlGuiWindow {
       KFileItem item = model->itemForIndex(proxyModel->mapToSource(index));
       QUrl url = item.url();
       filePreview->showPreview(url);
+      //part->openUrl(url); // crash here
     }
 
     void setURL(QPoint position) {
@@ -210,6 +221,7 @@ class MainWindow : public KXmlGuiWindow {
     KDirSortFilterProxyModel *proxyModel;
     QTreeView *treeView;
     KImageFilePreview *filePreview;
+    KParts::ReadOnlyPart* part;
     int sortColumnLogicalIndex;
     bool sortOrderIsAscending;
 };
